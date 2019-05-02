@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 #
 # Dockerfile for shadowsocks-libev
 #
@@ -61,3 +62,4 @@ CMD exec ss-server -c /etc/shadowsocks-libev-server.json
 # -d ${DNS_ADDRS}
 # -u
 # ${ARGS}
+
