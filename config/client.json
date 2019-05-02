@@ -1,8 +1,8 @@
 {
 	"server":"159.89.137.123",
-	"server_port":8388,
+	"server_port":18721,
 	"local_port":1080,
-	"password":"aifuto",
+	"password":"45Qrs176showYoDGSY7eWk0WPiDvMljd6r5r4n36QqlIkbb9pz623gxWgEbkFBpX",
 	"timeout":600,
 	"method":"aes-256-cfb"
 }
