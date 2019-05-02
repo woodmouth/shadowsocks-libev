@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 #
 # Dockerfile for shadowsocks-libev
 #
