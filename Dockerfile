@@ -18,7 +18,7 @@ ENV ARGS=
 
 
 COPY . /tmp/repo
-COPY ./config/shadowsocks-libev-server.json /etc
+COPY ./config/server.json /etc
 RUN set -ex \
 # Build environment setup
 && apk add --no-cache --virtual .build-deps \
@@ -50,7 +50,7 @@ $(scanelf --needed --nobanner /usr/bin/ss-* \
 USER nobody
 
 
-CMD exec ss-server -c /etc/shadowsocks-libev-server.json
+CMD exec ss-server -c /etc/server.json
 # CMD exec ss-server \
 # -s ${SERVER_ADDR} \
 # -p ${SERVER_PORT} \
