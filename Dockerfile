@@ -1,6 +1,7 @@
 #
 # Dockerfile for shadowsocks-libev
 #
+# command to build docker image: sudo docker build -t='edwinlin/ss-server:<tag>' .
 
 
 FROM alpine
