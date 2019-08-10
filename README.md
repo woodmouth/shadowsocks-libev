@@ -11,7 +11,7 @@ It is a port of [Shadowsocks](https://github.com/shadowsocks/shadowsocks)
 created by [@clowwindy](https://github.com/clowwindy), and maintained by
 [@madeye](https://github.com/madeye) and [@linusyang](https://github.com/linusyang).
 
-Current version: 3.3.0 | [Changelog](debian/changelog)
+Current version: 3.3.1 | [Changelog](debian/changelog)
 
 ## Features
 
@@ -42,6 +42,7 @@ You have to install libsodium at least 1.0.8, but recommended 1.0.12 or later ve
 ### Distribution-specific guide
 
 - [Debian & Ubuntu](#debian--ubuntu)
+    + [Install from snapcraft.io](#install-from-snapcraftio)
     + [Install from repository](#install-from-repository)
     + [Build deb package from source](#build-deb-package-from-source)
     + [Configure and start the service](#configure-and-start-the-service)
@@ -66,6 +67,22 @@ For a complete list of available configure-time option,
 try `configure --help`.
 
 ### Debian & Ubuntu
+
+#### Install from snapcraft.io
+
+Snap is the recommended way to install the latest binaries.
+
+Stable channel:
+
+```bash
+sudo snap install shadowsocks-libev
+```
+
+Edge channel:
+
+```bash
+sudo snap install shadowsocks-libev --edge
+```
 
 #### Install from repository
 
@@ -98,15 +115,6 @@ For more info about backports, you can refer [Debian Backports](https://backport
 sudo sh -c 'printf "deb http://deb.debian.org/debian stretch-backports main" > /etc/apt/sources.list.d/stretch-backports.list'
 sudo apt update
 sudo apt -t stretch-backports install shadowsocks-libev
-```
-
-For **Ubuntu 14.04 and 16.04** users, please install from PPA:
-
-```bash
-sudo apt-get install software-properties-common -y
-sudo add-apt-repository ppa:max-c-lv/shadowsocks-libev -y
-sudo apt-get update
-sudo apt install shadowsocks-libev
 ```
 
 #### Build deb package from source
