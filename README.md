@@ -11,7 +11,7 @@ It is a port of [Shadowsocks](https://github.com/shadowsocks/shadowsocks)
 created by [@clowwindy](https://github.com/clowwindy), and maintained by
 [@madeye](https://github.com/madeye) and [@linusyang](https://github.com/linusyang).
 
-Current version: 3.3.1 | [Changelog](debian/changelog)
+Current version: 3.3.2 | [Changelog](debian/changelog)
 
 ## Features
 
@@ -54,11 +54,15 @@ sudo snap install shadowsocks-libev --edge
 - [Fedora & RHEL](#fedora--rhel)
     + [Build from source with centos](#build-from-source-with-centos)
     + [Install from repository](#install-from-repository-1)
-- [Archlinux](#archlinux)
+- [Archlinux & Manjaro](#archlinux--manjaro)
 - [NixOS](#nixos)
 - [Nix](#nix)
 - [Directly build and install on UNIX-like system](#linux)
 - [FreeBSD](#freebsd)
+    + [Install](#install)
+    + [Configuration](#configuration)
+    + [Run](#run)
+    + [Run as client](#run-as-client)
 - [OpenWRT](#openwrt)
 - [OS X](#os-x)
 - [Windows (MinGW)](#windows-mingw)
@@ -213,7 +217,7 @@ su -c 'yum install shadowsocks-libev'
 ```
 The repository is maintained by [@librehat](https://github.com/librehat), any issues, please report [here](https://github.com/librehat/shadowsocks-libev/issues)
 
-### Archlinux
+### Archlinux & Manjaro
 
 ```bash
 sudo pacman -S shadowsocks-libev
@@ -294,26 +298,48 @@ sudo make install
 You may need to manually install missing softwares.
 
 ### FreeBSD
+#### Install
+Shadowsocks-libev is available in FreeBSD Ports Collection. You can install it in either way, `pkg` or `ports`.
+
+**pkg (recommended)**
 
 ```bash
-su
+pkg install shadowsocks-libev
+```
+
+**ports**
+
+```bash
 cd /usr/ports/net/shadowsocks-libev
 make install
 ```
 
-Edit your config.json file. By default, it's located in /usr/local/etc/shadowsocks-libev.
+#### Configuration
+Edit your `config.json` file. By default, it's located in `/usr/local/etc/shadowsocks-libev`.
 
-To enable shadowsocks-libev, add the following rc variable to your /etc/rc.conf file:
+To enable shadowsocks-libev, add the following rc variable to your `/etc/rc.conf` file:
 
 ```
 shadowsocks_libev_enable="YES"
 ```
+
+#### Run
 
 Start the Shadowsocks server:
 
 ```bash
 service shadowsocks_libev start
 ```
+
+#### Run as client
+By default, shadowsocks-libev is running as a server in FreeBSD. If you would like to start shadowsocks-libev in client mode, you can modify the rc script (`/usr/local/etc/rc.d/shadowsocks_libev`) manually.
+
+```
+# modify the following line from "ss-server" to "ss-local"
+command="/usr/local/bin/ss-local"
+```
+
+Note that is simply a workaround, each time you upgrade the port your changes will be overwritten by the new version.
 
 ### OpenWRT
 
