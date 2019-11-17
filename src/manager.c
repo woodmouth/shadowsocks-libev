@@ -212,10 +212,6 @@ construct_command_line(struct manager_ctx *manager, struct server *server)
         int len = strlen(cmd);
         snprintf(cmd + len, BUF_SIZE - len, " -d \"%s\"", manager->nameservers);
     }
-    if (manager->workdir) {
-        int len = strlen(cmd);
-        snprintf(cmd + len, BUF_SIZE - len, " -D \"%s\"", manager->workdir);
-    }
     for (i = 0; i < manager->host_num; i++) {
         int len = strlen(cmd);
         snprintf(cmd + len, BUF_SIZE - len, " -s %s", manager->hosts[i]);
@@ -1080,12 +1076,7 @@ main(int argc, char **argv)
         daemonize(pid_path);
     }
 
-    if (manager_address == NULL) {
-        manager_address = "127.0.0.1:8839";
-        LOGI("using the default manager address: %s", manager_address);
-    }
-
-    if (server_num == 0 || manager_address == NULL) {
+    if (server_num == 0) {
         usage();
         exit(EXIT_FAILURE);
     }
@@ -1100,6 +1091,49 @@ main(int argc, char **argv)
 
     if (no_delay == 1) {
         LOGI("using tcp no-delay");
+    }
+
+#ifndef __MINGW32__
+    // setuid
+    if (user != NULL && !run_as(user)) {
+        FATAL("failed to switch user");
+    }
+
+    if (geteuid() == 0) {
+        LOGI("running from root user");
+    }
+#endif
+
+    struct passwd *pw = getpwuid(getuid());
+
+    if (workdir == NULL || strlen(workdir) == 0) {
+        workdir = pw->pw_dir;
+        // If home dir is still not defined or set to nologin/nonexistent, fall back to /tmp
+        if (strstr(workdir, "nologin") || strstr(workdir, "nonexistent") || workdir == NULL || strlen(workdir) == 0) {
+            workdir = "/tmp";
+        }
+
+        working_dir_size = strlen(workdir) + 15;
+        working_dir      = ss_malloc(working_dir_size);
+        snprintf(working_dir, working_dir_size, "%s/.shadowsocks", workdir);
+    } else {
+        working_dir_size = strlen(workdir) + 2;
+        working_dir      = ss_malloc(working_dir_size);
+        snprintf(working_dir, working_dir_size, "%s", workdir);
+    }
+    LOGI("working directory points to %s", working_dir);
+
+    int err = mkdir(working_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    if (err != 0 && errno != EEXIST) {
+        ERROR("mkdir");
+        ss_free(working_dir);
+        FATAL("unable to create working directory");
+    }
+
+    if (manager_address == NULL) {
+        manager_address = ss_malloc(PATH_MAX);
+        snprintf(manager_address, PATH_MAX, "%s/.ss-manager.socks", workdir);
+        LOGI("using the default manager address: %s", manager_address);
     }
 
     // ignore SIGPIPE
@@ -1143,43 +1177,6 @@ main(int argc, char **argv)
 
     // initialize ev loop
     struct ev_loop *loop = EV_DEFAULT;
-
-#ifndef __MINGW32__
-    // setuid
-    if (user != NULL && !run_as(user)) {
-        FATAL("failed to switch user");
-    }
-
-    if (geteuid() == 0) {
-        LOGI("running from root user");
-    }
-#endif
-
-    struct passwd *pw = getpwuid(getuid());
-
-    if (workdir == NULL || strlen(workdir) == 0) {
-        workdir = pw->pw_dir;
-        // If home dir is still not defined or set to nologin/nonexistent, fall back to /tmp
-        if (strstr(workdir, "nologin") || strstr(workdir, "nonexistent") || workdir == NULL || strlen(workdir) == 0) {
-            workdir = "/tmp";
-        }
-
-        working_dir_size = strlen(workdir) + 15;
-        working_dir      = ss_malloc(working_dir_size);
-        snprintf(working_dir, working_dir_size, "%s/.shadowsocks", workdir);
-    } else {
-        working_dir_size = strlen(workdir) + 2;
-        working_dir      = ss_malloc(working_dir_size);
-        snprintf(working_dir, working_dir_size, "%s", workdir);
-    }
-    LOGI("working directory points to %s", working_dir);
-
-    int err = mkdir(working_dir, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-    if (err != 0 && errno != EEXIST) {
-        ERROR("mkdir");
-        ss_free(working_dir);
-        FATAL("unable to create working directory");
-    }
 
     // Clean up all existed processes
     DIR *dp;

@@ -11,7 +11,7 @@ It is a port of [Shadowsocks](https://github.com/shadowsocks/shadowsocks)
 created by [@clowwindy](https://github.com/clowwindy), and maintained by
 [@madeye](https://github.com/madeye) and [@linusyang](https://github.com/linusyang).
 
-Current version: 3.3.2 | [Changelog](debian/changelog)
+Current version: 3.3.3 | [Changelog](debian/changelog)
 
 ## Features
 
@@ -81,23 +81,12 @@ try `configure --help`.
 
 Shadowsocks-libev is available in the official repository for following distributions:
 
-* Debian 8 or higher, including oldstable (jessie), stable (stretch), testing (buster) and unstable (sid)
+* Debian 8 or higher, including oldoldstable (jessie), old stable (stretch), stable (buster), testing (bullseye) and unstable (sid)
 * Ubuntu 16.10 or higher
 
 ```bash
 sudo apt update
 sudo apt install shadowsocks-libev
-```
-
-For **Debian 8 (Jessie)** users, please install it from `jessie-backports-sloppy`:
-We strongly encourage you to install shadowsocks-libev from `jessie-backports-sloppy`.
-For more info about backports, you can refer [Debian Backports](https://backports.debian.org).
-
-```bash
-sudo sh -c 'printf "deb http://deb.debian.org/debian jessie-backports main\n" > /etc/apt/sources.list.d/jessie-backports.list'
-sudo sh -c 'printf "deb http://deb.debian.org/debian jessie-backports-sloppy main" >> /etc/apt/sources.list.d/jessie-backports.list'
-sudo apt update
-sudo apt -t jessie-backports-sloppy install shadowsocks-libev
 ```
 
 For **Debian 9 (Stretch)** users, please install it from `stretch-backports`:

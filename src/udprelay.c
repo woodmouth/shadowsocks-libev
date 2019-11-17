@@ -377,15 +377,17 @@ create_remote_socket(int ipv6)
         }
 #ifdef MODULE_REMOTE
         if (is_bind_local_addr) {
-            if (bind_to_addr(&local_addr_v6, remote_sock) == -1) {
-                ERROR("bind_to_addr");
-                FATAL("[udp] cannot bind remote");
-                return -1;
+            if (local_addr_v6.ss_family == AF_INET6) {
+                if (bind_to_addr(&local_addr_v6, remote_sock) == -1) {
+                    ERROR("bind_to_addr");
+                    FATAL("[udp] cannot bind socket");
+                    return -1;
+                }
             }
         } else {
 #endif
         if (bind(remote_sock, (struct sockaddr *)&addr, sizeof(addr)) != 0) {
-            FATAL("[udp] cannot bind remote");
+            FATAL("[udp] cannot bind socket");
             return -1;
         }
 #ifdef MODULE_REMOTE
@@ -405,10 +407,12 @@ create_remote_socket(int ipv6)
         }
 #ifdef MODULE_REMOTE
         if (is_bind_local_addr) {
-            if (bind_to_addr(&local_addr_v4, remote_sock) == -1) {
-                ERROR("bind_to_addr");
-                FATAL("[udp] cannot bind remote");
-                return -1;
+            if (local_addr_v4.ss_family == AF_INET) {
+                if (bind_to_addr(&local_addr_v4, remote_sock) == -1) {
+                    ERROR("bind_to_addr");
+                    FATAL("[udp] cannot bind socket");
+                    return -1;
+                }
             }
         } else {
 #endif
@@ -492,7 +496,7 @@ create_server_socket(const char *host, const char *port)
         }
 #ifdef IP_TOS
         // Set QoS flag
-        int tos   = 46;
+        int tos   = 46 << 2;
         int proto = rp->ai_family == AF_INET6 ? IPPROTO_IP : IPPROTO_IPV6;
         setsockopt(server_sock, proto, IP_TOS, &tos, sizeof(tos));
 #endif
@@ -654,7 +658,7 @@ resolv_cb(struct sockaddr *addr, void *data)
 #endif
 #ifdef IP_TOS
                 // Set QoS flag
-                int tos   = 46;
+                int tos   = 46 << 2;
                 int proto = addr->sa_family == AF_INET6 ? IPPROTO_IP : IPPROTO_IPV6;
                 setsockopt(remotefd, proto, IP_TOS, &tos, sizeof(tos));
 #endif
@@ -842,7 +846,7 @@ remote_recv_cb(EV_P_ ev_io *w, int revents)
     }
 #ifdef IP_TOS
     // Set QoS flag
-    int tos   = 46;
+    int tos   = 46 << 2;
     int proto = remote_ctx->src_addr.ss_family == AF_INET6 ? IPPROTO_IP : IPPROTO_IPV6;
     setsockopt(src_fd, proto, IP_TOS, &tos, sizeof(tos));
 #endif
@@ -1175,7 +1179,7 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
 #endif
 #ifdef IP_TOS
         // Set QoS flag
-        int tos = 46;
+        int tos = 46 << 2;
         setsockopt(remotefd, IPPROTO_IP, IP_TOS, &tos, sizeof(tos));
 #endif
 #ifdef SET_INTERFACE
@@ -1264,7 +1268,7 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
 #endif
 #ifdef IP_TOS
                 // Set QoS flag
-                int tos   = 46;
+                int tos   = 46 << 2;
                 int proto = dst_addr.ss_family == AF_INET6 ? IPPROTO_IP : IPPROTO_IPV6;
                 setsockopt(remotefd, proto, IP_TOS, &tos, sizeof(tos));
 #endif

@@ -478,10 +478,12 @@ connect_to_remote(EV_P_ struct addrinfo *res,
     if (is_bind_local_addr) {
         struct sockaddr_storage *local_addr =
             res->ai_family == AF_INET ? &local_addr_v4 : &local_addr_v6;
-        if (bind_to_addr(local_addr, sockfd) == -1) {
-            ERROR("bind_to_addr");
-            close(sockfd);
-            return NULL;
+        if (res->ai_family == local_addr->ss_family) {
+            if (bind_to_addr(local_addr, sockfd) == -1) {
+                ERROR("bind_to_addr");
+                FATAL("cannot bind socket");
+                return NULL;
+            }
         }
     }
 
@@ -706,8 +708,6 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
         buf    = remote->buf;
 
         // Only timer the watcher if a valid connection is established
-        int timeout = max(MIN_TCP_IDLE_TIMEOUT, server->listen_ctx->timeout);
-        ev_timer_set(&server->recv_ctx->watcher, timeout, timeout);
         ev_timer_again(EV_A_ & server->recv_ctx->watcher);
     }
 
@@ -1114,8 +1114,6 @@ remote_recv_cb(EV_P_ ev_io *w, int revents)
         return;
     }
 
-    int timeout = max(MIN_TCP_IDLE_TIMEOUT, server->listen_ctx->timeout);
-    ev_timer_set(&server->recv_ctx->watcher, timeout, timeout);
     ev_timer_again(EV_A_ & server->recv_ctx->watcher);
 
     ssize_t r = recv(remote->fd, server->buf->data, SOCKET_BUF_SIZE, 0);
@@ -1396,12 +1394,11 @@ new_server(int fd, listen_ctx_t *listener)
     crypto->ctx_init(crypto->cipher, server->e_ctx, 1);
     crypto->ctx_init(crypto->cipher, server->d_ctx, 0);
 
-    int request_timeout = min(MAX_REQUEST_TIMEOUT, listener->timeout);
-
+    int timeout = max(MIN_TCP_IDLE_TIMEOUT, server->listen_ctx->timeout);
     ev_io_init(&server->recv_ctx->io, server_recv_cb, fd, EV_READ);
     ev_io_init(&server->send_ctx->io, server_send_cb, fd, EV_WRITE);
     ev_timer_init(&server->recv_ctx->watcher, server_timeout_cb,
-                  request_timeout, request_timeout);
+                  timeout, timeout);
 
     cork_dllist_add(&connections, &server->entries);
 
@@ -1573,6 +1570,8 @@ main(int argc, char **argv)
     int server_num = 0;
     ss_addr_t server_addr[MAX_REMOTE_NUM];
     memset(server_addr, 0, sizeof(ss_addr_t) * MAX_REMOTE_NUM);
+    memset(&local_addr_v4, 0, sizeof(struct sockaddr_storage));
+    memset(&local_addr_v6, 0, sizeof(struct sockaddr_storage));
 
     static struct option long_options[] = {
         { "fast-open",       no_argument,       NULL, GETOPT_VAL_FAST_OPEN   },
@@ -1640,8 +1639,7 @@ main(int argc, char **argv)
             }
             break;
         case 'b':
-            if (parse_local_addr(&local_addr_v4, &local_addr_v6, optarg) == 0)
-                is_bind_local_addr = 1;
+            is_bind_local_addr += parse_local_addr(&local_addr_v4, &local_addr_v6, optarg);
             break;
         case 'p':
             server_port = optarg;
@@ -1765,12 +1763,11 @@ main(int argc, char **argv)
             fast_open = conf->fast_open;
         }
         if (is_bind_local_addr == 0) {
-            if (parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr) == 0)
-                is_bind_local_addr = 1;
-            if (parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr_v4) == 0)
-                is_bind_local_addr = 1;
-            if (parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr_v6) == 0)
-                is_bind_local_addr = 1;
+            is_bind_local_addr += parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr);
+        }
+        if (is_bind_local_addr == 0) {
+            is_bind_local_addr += parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr_v4);
+            is_bind_local_addr += parse_local_addr(&local_addr_v4, &local_addr_v6, conf->local_addr_v6);
         }
 #ifdef HAVE_SETRLIMIT
         if (nofile == 0) {
