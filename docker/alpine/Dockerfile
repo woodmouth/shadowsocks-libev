@@ -11,6 +11,7 @@ ENV PASSWORD=
 ENV METHOD      aes-256-gcm
 ENV TIMEOUT     300
 ENV DNS_ADDRS    8.8.8.8,8.8.4.4
+ENV TZ UTC
 ENV ARGS=
 
 COPY . /tmp/repo
@@ -39,6 +40,7 @@ RUN set -ex \
  && apk add --no-cache \
       ca-certificates \
       rng-tools \
+      tzdata \
       $(scanelf --needed --nobanner /usr/bin/ss-* \
       | awk '{ gsub(/,/, "\nso:", $2); print "so:" $2 }' \
       | sort -u) \
@@ -46,12 +48,6 @@ RUN set -ex \
 
 USER nobody
 
-CMD exec ss-server \
-      -s $SERVER_ADDR \
-      -p $SERVER_PORT \
-      -k ${PASSWORD:-$(hostname)} \
-      -m $METHOD \
-      -t $TIMEOUT \
-      -d $DNS_ADDRS \
-      -u \
-      $ARGS
+COPY ./docker/alpine/entrypoint.sh /entrypoint.sh
+
+CMD /entrypoint.sh
