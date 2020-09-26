@@ -4,5 +4,5 @@
 	"local_port":1080,
 	"password":"45Qrs176showYoDGSY7eWk0WPiDvMljd6r5r4n36QqlIkbb9pz623gxWgEbkFBpX",
 	"timeout":600,
-	"method":"aes-256-cfb"
+	"method":"aes-256-gcm"
 }
