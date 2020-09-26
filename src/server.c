@@ -57,6 +57,7 @@
 #include "plugin.h"
 #include "server.h"
 #include "winsock.h"
+#include "resolv.h"
 
 #ifndef EAGAIN
 #define EAGAIN EWOULDBLOCK
@@ -502,7 +503,7 @@ connect_to_remote(EV_P_ struct addrinfo *res,
     if (fast_open) {
 #if defined(MSG_FASTOPEN) && !defined(TCP_FASTOPEN_CONNECT)
         int s = -1;
-        s = sendto(sockfd, server->buf->data, server->buf->len,
+        s = sendto(sockfd, server->buf->data + server->buf->idx, server->buf->len,
                    MSG_FASTOPEN, res->ai_addr, res->ai_addrlen);
 #elif defined(TCP_FASTOPEN_WINSOCK)
         DWORD s   = -1;
@@ -531,8 +532,8 @@ connect_to_remote(EV_P_ struct addrinfo *res,
             memset(&remote->olap, 0, sizeof(remote->olap));
             remote->connect_ex_done = 0;
             if (ConnectEx(sockfd, res->ai_addr, res->ai_addrlen,
-                          server->buf->data, server->buf->len,
-                          &s, &remote->olap)) {
+                          server->buf->data + server->buf->idx,
+                          server->buf->len, &s, &remote->olap)) {
                 remote->connect_ex_done = 1;
                 break;
             }
@@ -570,7 +571,7 @@ connect_to_remote(EV_P_ struct addrinfo *res,
         FATAL("fast open is not enabled in this build");
 #endif
         if (s == 0)
-            s = send(sockfd, server->buf->data, server->buf->len, 0);
+            s = send(sockfd, server->buf->data + server->buf->idx, server->buf->len, 0);
 #endif
         if (s == -1) {
             if (errno == CONNECT_IN_PROGRESS) {
@@ -654,10 +655,10 @@ setTosFromConnmark(remote_t *remote, server_t *server)
         socklen_t len;
         struct sockaddr_storage sin;
         len = sizeof(sin);
-        if (getsockname(remote->fd, (struct sockaddr *)&sin, &len) == 0) {
+        if (getpeername(remote->fd, (struct sockaddr *)&sin, &len) == 0) {
             struct sockaddr_storage from_addr;
             len = sizeof from_addr;
-            if (getpeername(remote->fd, (struct sockaddr *)&from_addr, &len) == 0) {
+            if (getsockname(remote->fd, (struct sockaddr *)&from_addr, &len) == 0) {
                 if ((server->tracker = (struct dscptracker *)ss_malloc(sizeof(struct dscptracker)))) {
                     if ((server->tracker->ct = nfct_new())) {
                         // Build conntrack query SELECT
@@ -908,7 +909,7 @@ server_recv_cb(EV_P_ ev_io *w, int revents)
             return;
         } else {
             server->buf->len -= offset;
-            memmove(server->buf->data, server->buf->data + offset, server->buf->len);
+            server->buf->idx = offset;
         }
 
         if (verbose) {
@@ -1991,7 +1992,7 @@ main(int argc, char **argv)
 
             // Bind to port
             int listenfd;
-            listenfd = create_and_bind(host, server_port, mptcp);
+            listenfd = create_and_bind(host, port, mptcp);
             if (listenfd == -1) {
                 continue;
             }
