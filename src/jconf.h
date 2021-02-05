@@ -72,6 +72,10 @@ typedef struct {
     char *plugin_opts;
     int fast_open;
     int reuse_port;
+    int tcp_incoming_sndbuf;
+    int tcp_incoming_rcvbuf;
+    int tcp_outgoing_sndbuf;
+    int tcp_outgoing_rcvbuf;
     int nofile;
     char *nameserver;
     int dscp_num;
